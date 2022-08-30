@@ -1,0 +1,98 @@
+﻿@page "/fetchbookdetails"
+@using BlazorFirstApp.Shared.Models
+@inject HttpClient httpClient
+
+<h3>BookDetails</h3>
+<div class="row">
+    <div class="col-md-6">
+        <a href="/book/add" class="btn btn-primary" role="button">
+            <i class="fas fa-user-plus"></i>
+            Add User
+        </a>
+    </div>
+
+    <div class="input-group col">
+        <input type="text" class="form-control" placeholder="Search user by name"
+        @bind=SearchString @bind:event="oninput" @onkeyup="FilterBook"/>
+
+        @if (SearchString.Length > 0)
+        {
+            <div class="input-group-append">
+                <button class="btn btn-danger" @onclick="ResetSearch">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<br />
+
+@if (bookList == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table table-striped align-middle table-bordered">
+        <thead class="table-success">
+            <tr>
+                <th>BookId</th>
+                <th>BookName</th>
+                <th>BookAuthor</th>
+                <th>CourseName</th>
+                <th>PurchaseDate</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var book in bookList)
+            {
+                <tr>
+                    <td>@book.BookId</td>
+                    <td>@book.BookName</td>
+                    <td>@book.BookAuthor</td>
+                    <td>@book.CourseName</td>
+                    <td>@book.PurchaseDate</td>
+                    <td>
+                        <a href='/book/edit/@book.BookId' class="btn btn-outline-dark" role="button">
+                            Edit
+                        </a>
+                        <a href='/book/delete/@book.BookId' class="btn btn-outline-danger" role="button">
+                            Delete
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+
+    </table>
+}
+@code {
+    protected List<MasterBook> bookList = new();
+    protected List<MasterBook> searchBookData = new();
+    protected MasterBook book = new();
+    protected string SearchString { get; set; } = string.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+        await GetBooks();
+    }
+    protected async Task GetBooks()
+    {
+        bookList = await httpClient.GetFromJsonAsync<List<MasterBook>>("api/Book/GetBooks");
+        searchBookData = bookList;
+    }
+    protected void FilterBook()
+    {
+        if (!string.IsNullOrEmpty(SearchString))
+        {
+            bookList = searchBookData.Where(x => x.BookName.IndexOf(SearchString, StringComparison.OrdinalIgnoreCase) != -1)
+                .ToList();
+        }
+    }    
+    public void ResetSearch()
+    {
+        SearchString = string.Empty;
+        bookList = searchBookData;
+    }
+}
